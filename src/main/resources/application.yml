@@ -5,15 +5,16 @@ spring:
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  kafka:
-    bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
-    consumer:
-      group-id: coupon_system
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    properties:
-      spring.json.trusted.packages: '*'
+#  kafka:
+#    bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
+#    consumer:
+#      group-id: coupon_system
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      max-poll-records: 100
+#    properties:
+#      spring.json.trusted.packages: '*'
 
 #  jackson:
 #    date-format: yyyy-MM-dd HH:mm:ss
@@ -21,7 +22,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
     properties:
       hibernate:
         default_batch_fetch_size: 1000

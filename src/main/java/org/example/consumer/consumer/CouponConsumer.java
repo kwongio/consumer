@@ -1,9 +1,11 @@
 package org.example.consumer.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.consumer.domain.CouponAssignLog;
+import org.example.consumer.repository.CouponAssignLogRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -11,16 +13,33 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class CouponConsumer {
-    private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "coupon-assign", groupId = "coupon-assign-group")
-    public void listenAssignCouponRequest(String message) {
-        try {
-            CouponAssignRequest couponAssignRequest = objectMapper.readValue(message, CouponAssignRequest.class);
-            log.info("Received assign coupon request: {}", couponAssignRequest);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+    private final StringToCouponConverter stringToCouponConverter;
+    private final CouponAssignLogRepository couponAssignRepository;
+
+    @KafkaListener(topics = "coupon-assign", groupId = "coupon_system", containerFactory = "batchFactory")
+    public void listenAssignCouponRequests(List<String> coupons) throws JsonProcessingException {
+        List<CouponAssignLog> couponAssignLogs = coupons.stream()
+                .map(stringToCouponConverter::convert)
+                .map(request -> CouponAssignLog.builder()
+                        .couponId(request.getCouponId())
+                        .uuid(request.getUuid().toString())
+                        .build())
+                .toList();
+
+        if (!couponAssignLogs.isEmpty()) {
+            couponAssignRepository.saveAll(couponAssignLogs);
         }
+    }
 
+
+    @KafkaListener(topics = "coupon-assign-dlt", groupId = "coupon_system")
+    public void couponDlt(String coupon) {
+        CouponAssignRequest couponAssignRequest = stringToCouponConverter.convert(coupon);
+        CouponAssignLog couponAssignLog = CouponAssignLog.builder()
+                .couponId(couponAssignRequest.getCouponId())
+                .uuid(couponAssignRequest.getUuid().toString())
+                .build();
+        couponAssignRepository.save(couponAssignLog);
     }
 }
